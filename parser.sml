@@ -205,10 +205,9 @@ and parsePrimaryExpression fstr tk =
       TK_LPAREN =>
          let 
             val tk2 = parseExpression fstr
-            val tk3 = nextToken fstr
          in
             if tk2 = TK_RPAREN
-            then tk3
+            then nextToken fstr
             else exp ")" tk
          end
     | TK_NUM _ => nextToken fstr
