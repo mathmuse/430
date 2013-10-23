@@ -54,7 +54,7 @@ fun
  | tkToStr n = case pairLookup n tokenMap of
       SOME n => n
     | NONE => error "AHHHH!!!!"
-;   
+; 
 
 fun exp a b = 
    error ("expected '" ^ a ^ "', found '" ^ (tkToStr b) ^ "'\n")
@@ -102,6 +102,9 @@ and parseSourceElement fstr =
    parseStatement fstr
 
 and parseStatement fstr = 
+   parseExpressionStatement fstr
+
+and parseExpressionStatement fstr = 
    let val tk1 = parseExpression fstr in
       if 
          tk1 = TK_SEMI
@@ -200,10 +203,10 @@ and parseMemberExpression fstr tk =
 and parsePrimaryExpression fstr tk =
    let val tk1 = nextToken fstr in  
       case tk of
-         TK_LPAREN => 
+         TK_LPAREN =>
             if (parseExpression fstr) = TK_RPAREN
-            then (tk1)
-            else exp ")" tk1 
+            then (nextToken fstr)
+            else exp ")" tk2 
        | TK_NUM _ => (tk1) 
        | TK_TRUE => (tk1)
        | TK_FALSE => (tk1)
@@ -212,8 +215,6 @@ and parsePrimaryExpression fstr tk =
        | _ => exp "value" tk 
    end
 ;
-
-
 
 
 
