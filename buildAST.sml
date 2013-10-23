@@ -160,21 +160,41 @@ and parseRecBin nextFun tkChk opr fstr tk lft =
 fun parse fname =
    let 
       val fstr = TextIO.openIn fname;
+      val ast = parseProgram fstr (nextToken fstr)
    in
-      parseSourceElement fstr (nextToken fstr)
+      PROGRAM {elems = ast}
    end
+
+and parseProgram fstr tk = 
+   if isExpression tk
+   then 
+      let
+         val (tk1, ast) = parseSourceElement fstr tk
+      in
+         ast :: (parseProgram fstr tk1)
+      end
+   else
+      []
 
 and parseSourceElement fstr tk =
    parseStatement fstr tk
 
 and parseStatement fstr tk = 
-   parseExpressionStatement fstr tk
+   let val (tk1, ast) = parseExpressionStatement fstr tk
+   in
+      (tk1, STMT {stmt=ast})
+   end
 
 and parseExpressionStatement fstr tk = 
    let val (tk1, ast1) = parseExpression fstr tk
    in
-      (tk1, ST_EXP {exp=ast1})
+      if tk1 = TK_SEMI
+      then
+         (nextToken fstr, ST_EXP {exp=ast1})
+      else
+         exp ";" tk1
    end
+
 
 and parseExpression fstr tk = 
    parseBinary parseAssignmentExpression isCommaOp fstr tk
