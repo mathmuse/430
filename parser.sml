@@ -124,7 +124,8 @@ fun
 
 fun 
    binTkToOp TK_PLUS = BOP_PLUS
- | binTkToOp TK_TIMES = BOP_MINUS
+ | binTkToOp TK_MINUS = BOP_MINUS
+ | binTkToOp TK_TIMES = BOP_TIMES
  | binTkToOp TK_DIVIDE = BOP_DIVIDE
  | binTkToOp TK_MOD = BOP_MOD
  | binTkToOp TK_EQ = BOP_EQ
