@@ -122,7 +122,7 @@ and parseExpressionStatement fstr tk =
          if 
             tk1 = TK_SEMI
          then 
-            ()
+            parseExpressionStatement fstr (nextToken fstr)
          else
             exp ";" tk1
       end
