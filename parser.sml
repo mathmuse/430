@@ -46,6 +46,7 @@ val tokenMap = [
    (TK_EOF, "eof")
 ];
 
+
 fun 
    tkToStr (TK_NUM n) = Int.toString(n)
  | tkToStr (TK_ID n) = n
@@ -54,6 +55,11 @@ fun
       SOME n => n
     | NONE => error "AHHHH!!!!"
 ;   
+
+fun exp a b = 
+   error ("expected '" ^ a ^ "', found '" ^ (tkToStr b) ^ "'\n")
+;
+
 
 
 fun isEqOp tk = 
@@ -102,7 +108,7 @@ and parseStatement fstr =
       then 
          ()
       else
-         error ("expected ';', found '" ^ (tkToStr tk1) ^ "'")
+         exp ";" tk1
    end
 
 and parseExpression fstr = 
@@ -123,7 +129,7 @@ and parseConditionalExpression fstr =
          let val tk2 = (parseAssignmentExpression fstr) in
             if tk2 = TK_COLON
             then parseAssignmentExpression fstr 
-            else error ("expected ':' but found '" ^ (tkToStr tk2) ^ "'")
+            else exp ":" tk2 
          end
       else tk1
    end
@@ -195,13 +201,13 @@ and parsePrimaryExpression fstr tk =
          TK_LPAREN => 
             if (parseExpression fstr) = TK_RPAREN
             then (tk1)
-            else error ("expected ')' but found '" ^ (tkToStr tk1) ^ "'")
+            else exp ")" tk1 
        | TK_NUM _ => (tk1) 
        | TK_TRUE => (tk1)
        | TK_FALSE => (tk1)
        | TK_STRING _ => (tk1)
        | TK_UNDEFINED => (tk1)
-       | _ => error ("expected 'value', found '" ^ (tkToStr tk) ^ "'")
+       | _ => exp "value" tk 
    end
 ;
 
