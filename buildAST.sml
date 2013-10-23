@@ -1,5 +1,6 @@
 open TextIO;
 use "tokenizer.sml";
+use "ast.sml";
 
 fun error s = (output (stdErr, s); OS.Process.exit OS.Process.failure);
 
@@ -102,10 +103,58 @@ fun isUnaryOp tk =
    tk = TK_MINUS
 ;
 
+fun isAndOp tk = 
+   tk = TK_AND
+;
+
+fun isOrOp tk = 
+   tk = TK_OR
+;
+
+fun isCommaOp tk = 
+   tk = TK_COMMA
+;
+
 fun 
    unTkToOp TK_NOT = UOP_NOT
  | unTkToOp TK_TYPEOF = UOP_TYPEOF
  | unTkToOp TK_MINUS = UOP_MINUS
+ | unTkToOp n = error ":("
+;
+
+fun 
+   binTkToOp TK_PLUS = BOP_PLUS
+ | binTkToOp TK_TIMES = BOP_MINUS
+ | binTkToOp TK_DIVIDE = BOP_DIVIDE
+ | binTkToOp TK_MOD = BOP_MOD
+ | binTkToOp TK_EQ = BOP_EQ
+ | binTkToOp TK_NE = BOP_NE
+ | binTkToOp TK_LT = BOP_LT
+ | binTkToOp TK_GT = BOP_GT
+ | binTkToOp TK_LE = BOP_LE
+ | binTkToOp TK_GE = BOP_GE
+ | binTkToOp TK_AND = BOP_AND
+ | binTkToOp TK_OR = BOP_OR
+ | binTkToOp TK_COMMA = BOP_COMMA
+ | binTkToOp n = error ":(("
+;
+
+
+fun parseBinary nextFun tkChk fstr tk =  
+   let val (tk1, ast) = nextFun fstr tk in 
+      if tkChk tk1
+      then parseRecBin nextFun tkChk (binTkToOp tk1) fstr (nextToken fstr) ast
+      else (tk1, ast)
+   end
+
+and parseRecBin nextFun tkChk opr fstr tk lft = 
+   let val (tk1, ast) = nextFun fstr tk
+       val newast = EXP_BINARY {opr=opr, lft=lft, rht=ast}
+   in 
+      if tkChk tk1
+      then parseRecBin nextFun tkChk (binTkToOp tk1) fstr (nextToken fstr) newast
+      else (tk1, newast)
+   end
 ;
 
 fun parse fname =
@@ -122,113 +171,50 @@ and parseStatement fstr tk =
    parseExpressionStatement fstr tk
 
 and parseExpressionStatement fstr tk = 
-   if isExpression tk
-   then 
-      let val tk1 = parseExpression fstr tk in
-         if 
-            tk1 = TK_SEMI
-         then 
-            parseExpressionStatement fstr (nextToken fstr)
-         else
-            exp ";" tk1
-      end
-   else if tk=TK_EOF then
-      ()
-   else 
-      exp "eof" tk
+   let val (tk1, ast1) = parseExpression fstr tk
+   in
+      (tk1, ST_EXP {exp=ast1})
+   end
 
 and parseExpression fstr tk = 
-   let val tk1 = parseAssignmentExpression fstr tk in
-      if 
-         tk1 = TK_COMMA
-      then
-         parseExpression fstr (nextToken fstr)
-      else
-         (tk1)
-   end
+   parseBinary parseAssignmentExpression isCommaOp fstr tk
 
 and parseAssignmentExpression fstr tk = 
    parseConditionalExpression fstr tk
 
 and parseConditionalExpression fstr tk = 
-   let val tk1 = (parseLogicalORExpression fstr tk) in
+   let val (tk1, ast1) = (parseLogicalORExpression fstr tk) in
       if tk1 = TK_QUESTION
       then
-         let val tk2 = (parseAssignmentExpression fstr (nextToken fstr)) in
+         let val (tk2, ast2) = (parseAssignmentExpression fstr (nextToken fstr)) in
             if tk2 = TK_COLON
-            then parseAssignmentExpression fstr (nextToken fstr)
+            then 
+               let val (tk3, ast3) = parseAssignmentExpression fstr (nextToken fstr)
+               in
+                  (tk3, EXP_COND {guard=ast1, thenExp=ast2, elseExp=ast3})
+               end
             else exp ":" tk2 
          end
-      else tk1
+      else (tk1, ast1)
    end
 
 and parseLogicalORExpression fstr tk =
-   let val tk1 = parseLogicalANDExpression fstr tk in
-      if tk1 = TK_OR
-      then parseLogicalORExpression fstr (nextToken fstr)
-      else tk1
-   end
+   parseBinary parseLogicalANDExpression isOrOp fstr tk
 
-and parseLogicalANDExpression fstr tk =
-   let val tk1 = parseEqualityExpression fstr tk in
-      if tk1 = TK_AND
-      then parseLogicalANDExpression fstr (nextToken fstr)
-      else tk1
-   end
+and parseLogicalANDExpression fstr tk = 
+   parseBinary parseEqualityExpression isAndOp fstr tk
 
 and parseEqualityExpression fstr tk = 
-   let val tk1 = parseRelationalExpression fstr tk in
-      if isEqOp tk1
-      then parseEqualityExpression fstr (nextToken fstr)
-      else tk1
-   end
+   parseBinary parseRelationalExpression isEqOp fstr tk
 
 and parseRelationalExpression fstr tk = 
-   let val tk1 = parseAdditiveExpression fstr tk in
-      if isRelOp tk1
-      then parseRelationalExpression fstr (nextToken fstr)
-      else tk1
-   end
+   parseBinary parseAdditiveExpression isRelOp fstr tk
 
 and parseAdditiveExpression fstr tk = 
-   let val tk1 = parseMultiplicativeExpression fstr tk in
-      if isAddOp tk1
-      then parseAdditiveExpression fstr (nextToken fstr)
-      else tk1
-   end
+   parseBinary parseMultiplicativeExpression isAddOp fstr tk
 
 and parseMultiplicativeExpression fstr tk = 
-   let val (tk1, ast) = parseUnaryExpression fstr tk in
-      if isMultOp tk1
-      then parseRecMult fstr (nextToken fstr) ast
-      else (tk1, ast)
-   end
-
-and parseRecMult fstr tk lft = 
-   let val (tk1, ast) = parseUnaryExpression fstr tk 
-       val newast = EXP_BINARY {opr=BOP_TIMES, left=lft, rht=ast}
-   in
-      if isMultOp tk1
-      then parseRecMult fstr (nextToken fstr) newast
-      else (tk1, newast)
-  end 
-
-and parseBinary nextFun tkChk opr fstr tk 
-   let val (tk1, ast) = nextFun fstr tk in 
-      if tkChk tk1
-      then parseRec nextFun tkChk opr fstr (nextToken fstr) ast
-      else (tk1, ast)
-
-and parseRecBin nextFun tkChk opr fstr tk lft
-   let val (tk1, ast) = nextFun fstr tk
-       val newast = EXP_BINARY {opr=opr, lft=lft, rht=ast}
-   in 
-      if tkChk tk1
-      then parseRecBin fstr (nextToken fstr) newast
-      else (tk1, newast)
-
-and parseRecBinary nextFun opr fstr tk lft
-   
+   parseBinary parseUnaryExpression isMultOp fstr tk
 
 and parseUnaryExpression fstr tk = 
    if isUnaryOp tk
