@@ -32,7 +32,7 @@ fun isUnaryOp tk =
    tk = TK_MINUS
 ;
 
-fun parse fname = 
+fun parse fname =
    let 
       val fstr = TextIO.openIn fname;
    in
@@ -48,7 +48,7 @@ and parseStatement fstr =
    then 
       ()
    else
-      error "No terminating semicolon!" 
+      error "expected ';', found ''" 
 
 and parseExpression fstr = 
    if 
