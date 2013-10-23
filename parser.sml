@@ -3,6 +3,59 @@ use "tokenizer.sml";
 
 fun error s = (output (stdErr, s); OS.Process.exit OS.Process.failure);
 
+val tokenMap = [
+   (TK_LBRACE, "{"),
+   (TK_RBRACE, "}"),
+   (TK_LPAREN, "("),
+   (TK_RPAREN, ")"),
+   (TK_LBRACKET, "["),
+   (TK_RBRACKET, "]"),
+   (TK_COMMA, ","),
+   (TK_SEMI, ";"),
+   (TK_QUESTION, "?"),
+   (TK_COLON, ":"),
+   (TK_DOT, "."),
+   (TK_PLUS, "+"),
+   (TK_MINUS, "-"),
+   (TK_TIMES, "*"),
+   (TK_DIVIDE, "/"),
+   (TK_MOD, "%"),
+   (TK_AND, "&&"),
+   (TK_OR, "||"),
+   (TK_ASSIGN, "="),
+   (TK_EQ, "=="),
+   (TK_LT, "<"),
+   (TK_LE, "<="),
+   (TK_GT, ">"),
+   (TK_GE, ">="),
+   (TK_NOT, "!"),
+   (TK_NE, "!="),
+   (TK_ELSE, "else"),
+   (TK_FALSE, "false"),
+   (TK_FUNCTION, "function"),
+   (TK_IF, "if"),
+   (TK_NEW, "new"),
+   (TK_PRINT, "print"),
+   (TK_RETURN, "return"),
+   (TK_THIS, "this"),
+   (TK_TRUE, "true"),
+   (TK_TYPEOF, "typeof"),
+   (TK_UNDEFINED, "undefined"),
+   (TK_VAR, "var"),
+   (TK_WHILE, "while"),
+   (TK_EOF, "eof")
+];
+
+fun 
+   tkToStr (TK_NUM n) = Int.toString(n)
+ | tkToStr (TK_ID n) = n
+ | tkToStr (TK_STRING n) = n
+ | tkToStr n = case pairLookup n tokenMap of
+      SOME n => n
+    | NONE => error "AHHHH!!!!"
+;   
+
+
 fun isEqOp tk = 
    tk = TK_EQ orelse 
    tk = TK_NE
@@ -68,7 +121,7 @@ and parseConditionalExpression fstr =
          let val tk2 = (parseAssignmentExpression fstr) in
             if tk2 = TK_COLON
             then parseAssignmentExpression fstr 
-            else error "Invalid conditional!"
+            else error "expected ':' but found '" ^ (tkToStr tk2) ^ "'"
          end
       else tk1
    end
@@ -140,13 +193,13 @@ and parsePrimaryExpression fstr tk =
          TK_LPAREN => 
             if (parseExpression fstr) = TK_RPAREN
             then (tk1)
-            else error "No closing parentheses"
+            else error "expected ')' but found '" ^ (tkToStr tk1) ^ "'"
        | TK_NUM _ => (tk1) 
        | TK_TRUE => (tk1)
        | TK_FALSE => (tk1)
        | TK_STRING _ => (tk1)
        | TK_UNDEFINED => (tk1)
-       | _ => error "Unknown terminal!"
+       | _ => error "expected 'value', found '" ^ (tkToStr tk) ^ "'"
    end
 ;
 
