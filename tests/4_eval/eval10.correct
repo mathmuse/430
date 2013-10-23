@@ -1,0 +1,5 @@
+(typeof undefined) ==> "undefined"
+(typeof "Hello.") ==> "string"
+(typeof true) ==> "boolean"
+(typeof false) ==> "boolean"
+(typeof 47) ==> "number"

@@ -1,0 +1,10 @@
+(1 == 2) ==> false
+(1 == 1) ==> true
+(1 == undefined) ==> false
+("Hello" == true) ==> false
+("Hello" == "Hello") ==> true
+(1 != 2) ==> true
+(1 != 1) ==> false
+(1 != undefined) ==> true
+("Hello" != true) ==> true
+("Hello" != "Hello") ==> false

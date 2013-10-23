@@ -1,0 +1,6 @@
+2 ==> 2
+"Hello." ==> "Hello."
+undefined ==> undefined
+true ==> true
+false ==> false
+4 ==> 4
