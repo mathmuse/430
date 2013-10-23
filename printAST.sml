@@ -25,13 +25,11 @@ fun
 ;
 
 fun printAST (PROGRAM {elems=el}) = 
-   String.fromString (printProgram el)
+   print (printProgram el)
 
 and 
-   printProgram (h::t) = 
-      (printSourceElement h) ^ "\n" ^ (printProgram t)
- | printProgram [] = 
-      ""
+   printProgram n = 
+      String.concatWith "\n" (map printSourceElement n)
 
 and printSourceElement (STMT {stmt=stmt}) = 
    printStatement stmt 
