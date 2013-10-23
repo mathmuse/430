@@ -204,9 +204,14 @@ and parsePrimaryExpression fstr tk =
    let val tk1 = nextToken fstr in  
       case tk of
          TK_LPAREN =>
-            if (parseExpression fstr) = TK_RPAREN
-            then (nextToken fstr)
-            else exp ")" tk2 
+            let 
+               val tk2 = parseExpression fstr
+               val tk3 = nextToken fstr
+            in
+               if tk2 = TK_RPAREN
+               then tk3
+               else exp ")" tk
+            end
        | TK_NUM _ => (tk1) 
        | TK_TRUE => (tk1)
        | TK_FALSE => (tk1)
