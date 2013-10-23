@@ -60,7 +60,18 @@ fun exp a b =
    error ("expected '" ^ a ^ "', found '" ^ (tkToStr b) ^ "'\n")
 ;
 
-
+fun
+   isExpression TK_NOT = true
+ | isExpression TK_TYPEOF = true
+ | isExpression TK_MINUS = true
+ | isExpression TK_LPAREN = true
+ | isExpression (TK_NUM _) = true
+ | isExpression TK_TRUE = true
+ | isExpression TK_FALSE = true
+ | isExpression (TK_STRING _) = true
+ | isExpression TK_UNDEFINED = true
+ | isExpression _ = false
+;
 
 fun isEqOp tk = 
    tk = TK_EQ orelse 
@@ -95,101 +106,105 @@ fun parse fname =
    let 
       val fstr = TextIO.openIn fname;
    in
-      parseSourceElement fstr
+      parseSourceElement fstr (nextToken fstr)
    end
 
-and parseSourceElement fstr =
-   parseStatement fstr
+and parseSourceElement fstr tk =
+   parseStatement fstr tk
 
-and parseStatement fstr = 
+and parseStatement fstr tk = 
    parseExpressionStatement fstr
 
-and parseExpressionStatement fstr = 
-   let val tk1 = parseExpression fstr in
-      if 
-         tk1 = TK_SEMI
-      then 
-         ()
-      else
-         exp ";" tk1
-   end
+and parseExpressionStatement fstr tk = 
+   if isExpression tk
+   then 
+      let val tk1 = parseExpression fstr tk in
+         if 
+            tk1 = TK_SEMI
+         then 
+            ()
+         else
+            exp ";" tk1
+      end
+   else if tk=TK_EOF then
+      ()
+   else 
+      exp "eof" tk
 
-and parseExpression fstr = 
-   let val tk1 = parseAssignmentExpression fstr in
+and parseExpression fstr tk = 
+   let val tk1 = parseAssignmentExpression fstr tk in
       if 
          tk1 = TK_COMMA
       then
-         parseExpression fstr
+         parseExpression fstr (nextToken fstr)
       else
          (tk1)
    end
 
-and parseAssignmentExpression fstr = 
-   parseConditionalExpression fstr
+and parseAssignmentExpression fstr tk = 
+   parseConditionalExpression fstr tk
 
-and parseConditionalExpression fstr = 
-   let val tk1 = (parseLogicalORExpression fstr) in
+and parseConditionalExpression fstr tk = 
+   let val tk1 = (parseLogicalORExpression fstr tk) in
       if tk1 = TK_QUESTION
       then
-         let val tk2 = (parseAssignmentExpression fstr) in
+         let val tk2 = (parseAssignmentExpression fstr (nextToken fstr)) in
             if tk2 = TK_COLON
-            then parseAssignmentExpression fstr 
+            then parseAssignmentExpression fstr (nextToken fstr)
             else exp ":" tk2 
          end
       else tk1
    end
 
-and parseLogicalORExpression fstr =
-   let val tk1 = parseLogicalANDExpression fstr in
+and parseLogicalORExpression fstr tk =
+   let val tk1 = parseLogicalANDExpression fstr tk in
       if tk1 = TK_OR
-      then parseLogicalORExpression fstr
+      then parseLogicalORExpression fstr (nextToken fstr)
       else tk1
    end
 
-and parseLogicalANDExpression fstr =
-   let val tk1 = parseEqualityExpression fstr in
+and parseLogicalANDExpression fstr tk =
+   let val tk1 = parseEqualityExpression fstr tk in
       if tk1 = TK_AND
-      then parseLogicalANDExpression fstr
+      then parseLogicalANDExpression fstr (nextToken fstr)
       else tk1
    end
 
-and parseEqualityExpression fstr = 
-   let val tk1 = parseRelationalExpression fstr in
+and parseEqualityExpression fstr tk = 
+   let val tk1 = parseRelationalExpression fstr tk in
       if isEqOp tk1
-      then parseEqualityExpression fstr
+      then parseEqualityExpression fstr (nextToken fstr)
       else tk1
    end
 
-and parseRelationalExpression fstr = 
-   let val tk1 = parseAdditiveExpression fstr in
+and parseRelationalExpression fstr tk = 
+   let val tk1 = parseAdditiveExpression fstr tk in
       if isRelOp tk1
-      then parseRelationalExpression fstr
+      then parseRelationalExpression fstr (nextToken fstr)
       else tk1
    end
 
-and parseAdditiveExpression fstr = 
-   let val tk1 = parseMultiplicativeExpression fstr in
+and parseAdditiveExpression fstr tk = 
+   let val tk1 = parseMultiplicativeExpression fstr tk in
       if isAddOp tk1
-      then parseAdditiveExpression fstr
+      then parseAdditiveExpression fstr (nextToken fstr)
       else tk1
    end
 
-and parseMultiplicativeExpression fstr = 
-   let val tk1 = parseUnaryExpression fstr in
+and parseMultiplicativeExpression fstr tk = 
+   let val tk1 = parseUnaryExpression fstr tk in
       if isMultOp tk1
-      then parseMultiplicativeExpression fstr
+      then parseMultiplicativeExpression fstr (nextToken fstr)
       else tk1
    end
 
-and parseUnaryExpression fstr = 
-   let val tk1 = nextToken fstr in
-      if isUnaryOp tk1
-      then 
-         let val tk2 = nextToken fstr in 
-            parseLeftHandSideExpression fstr tk2
-         end
-      else parseLeftHandSideExpression fstr tk1
-   end
+and parseUnaryExpression fstr tk = 
+   if isUnaryOp tk
+   then 
+      let val tk1 = nextToken fstr in 
+         parseLeftHandSideExpression fstr tk1
+      end
+   else parseLeftHandSideExpression fstr tk
 
 and parseLeftHandSideExpression fstr tk = 
    parseCallExpression fstr tk
@@ -204,7 +219,7 @@ and parsePrimaryExpression fstr tk =
    case tk of
       TK_LPAREN =>
          let 
-            val tk2 = parseExpression fstr
+            val tk2 = parseExpression fstr (nextToken fstr)
          in
             if tk2 = TK_RPAREN
             then nextToken fstr
