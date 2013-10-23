@@ -112,12 +112,14 @@ and parseStatement fstr =
    end
 
 and parseExpression fstr = 
-   if 
-      (parseAssignmentExpression fstr) = TK_COMMA
-   then
-      parseExpression fstr
-   else
-      (TK_COMMA)
+   let val tk1 = parseAssignmentExpression fstr in
+      if 
+         tk1 = TK_COMMA
+      then
+         parseExpression fstr
+      else
+         (tk1)
+   end
 
 and parseAssignmentExpression fstr = 
    parseConditionalExpression fstr
