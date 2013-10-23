@@ -96,12 +96,14 @@ and parseSourceElement fstr =
    parseStatement fstr
 
 and parseStatement fstr = 
-   if 
-      (parseExpression fstr) = TK_SEMI
-   then 
-      ()
-   else
-      error "expected ';', found ''" 
+   let val tk1 = parseExpression fstr in
+      if 
+         tk1 = TK_SEMI
+      then 
+         ()
+      else
+         error ("expected ';', found '" ^ (tkToStr tk1) ^ "'")
+   end
 
 and parseExpression fstr = 
    if 
@@ -121,7 +123,7 @@ and parseConditionalExpression fstr =
          let val tk2 = (parseAssignmentExpression fstr) in
             if tk2 = TK_COLON
             then parseAssignmentExpression fstr 
-            else error "expected ':' but found '" ^ (tkToStr tk2) ^ "'"
+            else error ("expected ':' but found '" ^ (tkToStr tk2) ^ "'")
          end
       else tk1
    end
@@ -193,13 +195,13 @@ and parsePrimaryExpression fstr tk =
          TK_LPAREN => 
             if (parseExpression fstr) = TK_RPAREN
             then (tk1)
-            else error "expected ')' but found '" ^ (tkToStr tk1) ^ "'"
+            else error ("expected ')' but found '" ^ (tkToStr tk1) ^ "'")
        | TK_NUM _ => (tk1) 
        | TK_TRUE => (tk1)
        | TK_FALSE => (tk1)
        | TK_STRING _ => (tk1)
        | TK_UNDEFINED => (tk1)
-       | _ => error "expected 'value', found '" ^ (tkToStr tk) ^ "'"
+       | _ => error ("expected 'value', found '" ^ (tkToStr tk) ^ "'")
    end
 ;
 
