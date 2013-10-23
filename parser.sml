@@ -113,7 +113,7 @@ and parseSourceElement fstr tk =
    parseStatement fstr tk
 
 and parseStatement fstr tk = 
-   parseExpressionStatement fstr
+   parseExpressionStatement fstr tk
 
 and parseExpressionStatement fstr tk = 
    if isExpression tk
