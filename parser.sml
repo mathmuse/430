@@ -201,24 +201,23 @@ and parseMemberExpression fstr tk =
    parsePrimaryExpression fstr tk
 
 and parsePrimaryExpression fstr tk =
-   let val tk1 = nextToken fstr in  
-      case tk of
-         TK_LPAREN =>
-            let 
-               val tk2 = parseExpression fstr
-               val tk3 = nextToken fstr
-            in
-               if tk2 = TK_RPAREN
-               then tk3
-               else exp ")" tk
-            end
-       | TK_NUM _ => (tk1) 
-       | TK_TRUE => (tk1)
-       | TK_FALSE => (tk1)
-       | TK_STRING _ => (tk1)
-       | TK_UNDEFINED => (tk1)
-       | _ => exp "value" tk 
-   end
+   case tk of
+      TK_LPAREN =>
+         let 
+            val tk2 = parseExpression fstr
+            val tk3 = nextToken fstr
+         in
+            if tk2 = TK_RPAREN
+            then tk3
+            else exp ")" tk
+         end
+    | TK_NUM _ => nextToken fstr
+    | TK_TRUE => nextToken fstr
+    | TK_FALSE => nextToken fstr
+    | TK_STRING _ => nextToken fstr
+    | TK_UNDEFINED => nextToken fstr
+    | _ => exp "value" tk
+
 ;
 
 
