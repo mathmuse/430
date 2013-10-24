@@ -157,17 +157,20 @@ fun printExpr exp =
        | EXP_UNDEFINED => "undefined"
        | _ => "invalid final token"
    in
-      print (str ^ "\n")
+      str
    end
 ;
-   
+  
+fun println str = 
+   print (str ^ "\n") 
+;
 
 fun interpret fname =
    let
       val ast = parse fname
       val res = intProgram ast
    in
-      res
+      (map println res; ())
    end
 
 and intProgram (PROGRAM {elems=elems}) = 
@@ -177,7 +180,7 @@ and intSourceElement (STMT {stmt=stmt}) =
    intStatement stmt
 
 and intStatement (ST_EXP {exp=exp}) = 
-   intExpression exp
+   (printExpression exp 0) ^ " ==> " ^ (printExpr (intExpression exp))
 
 and 
    intExpression (EXP_BINARY n) = intBinary (EXP_BINARY n)
