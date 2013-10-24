@@ -86,11 +86,11 @@ and printBinary {opr=opr, lft=lft, rht=rht} prevPrec =
       val ret =  (printExpression lft prec) ^ (binOpToStr opr) 
          ^ (printExpression rht prec)
    in
-      if prec < prevPrec
-      then
+      (*if prec < prevPrec
+      then*)
          "(" ^ ret ^ ")"
-      else      
-         ret
+      (*else      
+         ret*)
    end
 
 and printUnary {opr=opr, opnd=opnd} prevPrec = 
@@ -98,11 +98,11 @@ and printUnary {opr=opr, opnd=opnd} prevPrec =
       val prec = unPrec opr 
       val ret = (unOpToStr opr) ^ (printExpression opnd prec)
    in
-      if prec < prevPrec
-      then
+      (*if prec < prevPrec
+      then*)
          "(" ^ ret ^ ")"
-      else
-         ret
+      (*else
+         ret*)
    end
 
 and printCond {guard=guard, thenExp=thenExp, elseExp=elseExp} prevPrec = 
@@ -111,10 +111,10 @@ and printCond {guard=guard, thenExp=thenExp, elseExp=elseExp} prevPrec =
       val ret = (printExpression guard prec) ^  " ? " ^ (printExpression thenExp prec) 
          ^ " : " ^ (printExpression elseExp prec) 
    in
-      if prec < prevPrec
-      then
+      (*if prec < prevPrec
+      then*)
          "(" ^ ret ^ ")"
-      else
-         ret
+      (*else
+         ret*)
    end
 ;
