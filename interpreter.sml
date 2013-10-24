@@ -151,7 +151,7 @@ fun printExpr exp =
    let 
       val str = case exp of 
          EXP_NUM n => Int.toString n
-       | EXP_STRING n => n
+       | EXP_STRING n => "\"" ^ n ^ "\""
        | EXP_TRUE => "true"
        | EXP_FALSE => "false"
        | EXP_UNDEFINED => "undefined"
