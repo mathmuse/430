@@ -174,8 +174,11 @@ and parseProgram fstr tk =
       in
          ast :: (parseProgram fstr tk1)
       end
+   else if tk = TK_EOF
+   then []
    else
-      []
+      exp "eof" tk
+      
 
 and parseSourceElement fstr tk =
    parseStatement fstr tk
