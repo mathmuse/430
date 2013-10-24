@@ -150,7 +150,7 @@ fun
 fun printExpr exp = 
    let 
       val str = case exp of 
-         EXP_NUM n => Int.toString n
+         EXP_NUM n => String.map (fn x => case x of #"~" => #"-" | n => n) (Int.toString n)
        | EXP_STRING n => "\"" ^ n ^ "\""
        | EXP_TRUE => "true"
        | EXP_FALSE => "false"
