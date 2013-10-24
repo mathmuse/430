@@ -1,5 +1,28 @@
 use "printAST.sml";
 
+fun 
+   getBinString BOP_PLUS = "+"
+ | getBinString BOP_MINUS = "-"
+ | getBinString BOP_TIMES = "*"
+ | getBinString BOP_DIVIDE = "/"
+ | getBinString BOP_MOD = "%"
+ | getBinString BOP_EQ = "=="
+ | getBinString BOP_NE = "!="
+ | getBinString BOP_LT = "<"
+ | getBinString BOP_GT = ">"
+ | getBinString BOP_LE = "<="
+ | getBinString BOP_GE = ">="
+ | getBinString BOP_AND = "&&"
+ | getBinString BOP_OR = "||"
+ | getBinString BOP_COMMA = ","
+;
+
+fun 
+   getUnString UOP_NOT = "!"
+ | getUnString UOP_TYPEOF = "typeof"
+ | getUnString UOP_MINUS = "-"
+;
+
 fun getBool bl = if bl then EXP_TRUE else EXP_FALSE;
 
 fun 
@@ -9,6 +32,10 @@ fun
 ;
 
 fun isBool bl = bl=EXP_TRUE orelse bl=EXP_FALSE;
+
+fun typeError opr req fnd = 
+   error ("operator '" ^ opr ^ "' requires " ^ req ^ ", found " ^ fnd)
+;
 
 fun binNumCheck a b = 
    case a of 
@@ -79,6 +106,15 @@ fun
  | doTypeof _ = error "unknown type!"
 ;
 
+fun 
+   getType (EXP_NUM _) = numType
+ | getType EXP_TRUE = boolType
+ | getType EXP_FALSE = boolType
+ | getType EXP_UNDEFINED = undefinedType
+ | getType (EXP_STRING _) = stringType
+ | getType _ = error "unknown type!"
+;
+
 fun doMinus (EXP_NUM n) = EXP_NUM (~n)
   | doMinus _ = error "bad minus"
 ;
@@ -101,8 +137,8 @@ fun
 ;
 
 fun 
-   doEqBinary BOP_EQ a b = getBool ((getBoolVal a) = (getBoolVal b))
- | doEqBinary BOP_NE a b = getBool ((getBoolVal a) <> (getBoolVal b))
+   doEqBinary BOP_EQ a b = getBool (a =  b)
+ | doEqBinary BOP_NE a b = getBool (a <> b)
  | doEqBinary _ _ _ = error "not a bool binary"
 ;
 
@@ -111,13 +147,27 @@ fun
  | doStringBinary _ _ _ = error "not a string binary"
 ;
 
+fun printExpr exp = 
+   let 
+      val str = case exp of 
+         EXP_NUM n => Int.toString n
+       | EXP_STRING n => n
+       | EXP_TRUE => "true"
+       | EXP_FALSE => "false"
+       | EXP_UNDEFINED => "undefined"
+       | _ => "invalid final token"
+   in
+      print (str ^ "\n")
+   end
+;
    
 
 fun interpret fname =
    let
       val ast = parse fname
+      val res = intProgram ast
    in
-      intProgram ast
+      res
    end
 
 and intProgram (PROGRAM {elems=elems}) = 
@@ -145,25 +195,31 @@ and intBinary (EXP_BINARY {opr=opr, lft=lft, rht=rht}) =
             then doStringBinary opr left right
             else if binNumCheck left right
             then doNumBinary opr left right
-            else error "bad +"
+            else typeError "+" "number * number or string * string"
+               ((getType left) ^ " * " ^ (getType right))
+
          end
       fun handleNum () = 
          let val right = intExpression rht in
             if binNumCheck left right
             then doNumBinary opr left right
-            else error "bad binary num op"
+            else typeError (getBinString opr) "number * number"
+               ((getType left) ^ " * " ^ (getType right))
          end
       fun handleRel () =
          let val right = intExpression rht in
             if binNumCheck left right
             then doRelBinary opr left right
-            else error "bad relational" 
+            else typeError (getBinString opr) "number * number"
+               ((getType left) ^ " * " ^ (getType right))
          end
       fun handleEq () = 
          let val right = intExpression rht in 
             if binSameCheck left right
             then doEqBinary opr left right
-            else error "bad eq"
+            else case opr of
+               BOP_EQ => EXP_FALSE
+             | BOP_NE => EXP_TRUE
          end
       fun handleOr () = 
          if unBoolCheck left
@@ -173,9 +229,10 @@ and intBinary (EXP_BINARY {opr=opr, lft=lft, rht=rht}) =
                let val right = intExpression rht in
                   if unBoolCheck right
                   then right
-                  else error "bad or"
+                  else typeError "||" "boolean * boolean" 
+                     ((getType left) ^ " * " ^ (getType right))
                end
-         else error "bad or"
+            else typeError "||" "boolean" (getType left)
       fun handleAnd () = 
          if unBoolCheck left
          then case left of
@@ -183,10 +240,13 @@ and intBinary (EXP_BINARY {opr=opr, lft=lft, rht=rht}) =
                let val right = intExpression rht in 
                   if unBoolCheck right
                   then right
-                  else error "bad and"
+                  else typeError "&&" "boolean * boolean" 
+                     ((getType left) ^ " * " ^ (getType right))
                end
           | EXP_FALSE => EXP_FALSE
-         else error "bad and"
+          else typeError "&&" "boolean" (getType left)
+      fun handleComma () = 
+         intExpression rht
    in 
       case opr of
          BOP_PLUS => handlePlus ()
@@ -202,7 +262,7 @@ and intBinary (EXP_BINARY {opr=opr, lft=lft, rht=rht}) =
        | BOP_GE => handleRel ()
        | BOP_AND => handleAnd ()
        | BOP_OR => handleOr ()
-       | _ => error "unknown operator"
+       | BOP_COMMA => handleComma ()
    end
 
 and intUnary (EXP_UNARY {opr=opr, opnd=opnd}) = 
@@ -211,13 +271,13 @@ and intUnary (EXP_UNARY {opr=opr, opnd=opnd}) =
       fun handleNot () =
          if unBoolCheck ret 
          then doNot ret
-         else error "bad not" 
+         else (print "unary "; typeError "!" "boolean" (getType opnd)) 
       fun handleTypeof () =
          doTypeof ret
       fun handleMinus () =
          if unNumCheck ret
          then doMinus ret
-         else error "bad minus"
+         else (print "unary "; typeError "-" "number" (getType opnd))
    in
       case opr of 
          UOP_NOT => handleNot ()
@@ -226,12 +286,15 @@ and intUnary (EXP_UNARY {opr=opr, opnd=opnd}) =
    end
 
 and intCond (EXP_COND {guard=guard, thenExp=thenExp, elseExp=elseExp}) =
-   if unBoolCheck guard 
-   then if getBoolVal guard
-      then
-         intExpression thenExp
-      else
-         intExpression elseExp
-   else error "bad guard"
+   let val gd = intExpression guard
+   in
+      if unBoolCheck gd
+      then if getBoolVal gd
+         then
+            intExpression thenExp
+         else
+            intExpression elseExp
+      else error ("boolean guard required for 'cond' expression, found " ^ (getType gd))
+   end 
 ;
 
